@@ -66,8 +66,8 @@ inputs:
   image_family:
     description: The image family for the operating system that the boot disk will be initialized with.
     required: false
-  preemptible:
-    description: Use GCE preemptible VM instance; https://cloud.google.com/compute/docs/instances/preemptible
+  spot:
+    description: Use GCE Spot VM instance; https://cloud.google.com/compute/docs/instances/spot
     default: false
     required: true
   ephemeral:
@@ -131,7 +131,7 @@ runs:
         --image=${{ inputs.image }}
         --image_family=${{ inputs.image_family }}
         --boot_disk_type=${{ inputs.boot_disk_type }}
-        --preemptible=${{ inputs.preemptible }}
+        --spot=${{ inputs.spot }}
         --ephemeral=${{ inputs.ephemeral }}
         --no_external_address=${{ inputs.no_external_address }}
         --actions_preinstalled=${{ inputs.actions_preinstalled }}
