@@ -41,6 +41,7 @@ maintenance_policy_terminate=
 instance_termination_action=
 arm=
 accelerator=
+max_run_duration=
 
 OPTLIND=1
 while getopts_long :h opt \
@@ -69,6 +70,7 @@ while getopts_long :h opt \
   maintenance_policy_terminate optional_argument \
   instance_termination_action required_argument \
   accelerator optional_argument \
+  max_run_duration required_argument \
   help no_argument "" "$@"
 do
   case "$opt" in
@@ -146,7 +148,10 @@ do
       ;;
     accelerator)
       accelerator=$OPTLARG
-      ;;      
+      ;;
+    max_run_duration)
+      max_run_duration=$OPTLARG
+      ;;
     h|help)
       usage
       exit 0
@@ -193,6 +198,7 @@ function start_vm {
   network_flag=$([[ ! -z "${network}"  ]] && echo "--network=${network}" || echo "")
   subnet_flag=$([[ ! -z "${subnet}"  ]] && echo "--subnet=${subnet}" || echo "")
   accelerator=$([[ ! -z "${accelerator}"  ]] && echo "--accelerator=${accelerator} --maintenance-policy=TERMINATE" || echo "")
+  max_run_duration_flag=$([[ ! -z "${max_run_duration}"  ]] && echo "--max-run-duration=${max_run_duration} --instance-termination-action=${instance_termination_action}" || echo "")
   maintenance_policy_flag=$([[ -z "${maintenance_policy_terminate}"  ]] || echo "--maintenance-policy=TERMINATE" )
 
   echo "The new GCE VM will be ${VM_ID}"
@@ -265,8 +271,6 @@ function start_vm {
 	./svc.sh install && \\
 	./svc.sh start && \\
 	gcloud compute instances add-labels ${VM_ID} --zone=${machine_zone} --labels=gh_ready=1
-	# 3 days represents the max workflow runtime. This will shutdown the instance if everything else fails.
-	nohup sh -c \"sleep 3d && CLOUDSDK_CONFIG=/tmp gcloud --quiet compute instances delete ${VM_ID} --zone=${machine_zone}\" > /dev/null &
   "
 
   if $actions_preinstalled ; then
@@ -325,7 +329,7 @@ function start_vm {
   gh_repo="$(truncate_to_label "${GITHUB_REPOSITORY##*/}")"
   gh_run_id="${GITHUB_RUN_ID}"
 
-  gcloud compute instances create ${VM_ID} \
+  gcloud beta compute instances create ${VM_ID} \
     --zone=${machine_zone} \
     ${disk_size_flag} \
     ${boot_disk_type_flag} \
@@ -339,6 +343,7 @@ function start_vm {
     ${no_external_address_flag} \
     ${subnet_flag} \
     ${accelerator} \
+    ${max_run_duration_flag} \
     ${maintenance_policy_flag} \
     --labels=gh_ready=0,gh_repo_owner="${gh_repo_owner}",gh_repo="${gh_repo}",gh_run_id="${gh_run_id}" \
     --metadata-from-file=shutdown-script=/tmp/shutdown_script.sh \
