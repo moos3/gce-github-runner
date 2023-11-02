@@ -38,7 +38,7 @@ ephemeral=
 no_external_address=
 actions_preinstalled=
 maintenance_policy_terminate=
-instance_termination_action_delete=
+instance_termination_action=
 arm=
 accelerator=
 
@@ -67,7 +67,7 @@ while getopts_long :h opt \
   actions_preinstalled required_argument \
   arm required_argument \
   maintenance_policy_terminate optional_argument \
-  instance_termination_action_delete optional_argument \
+  instance_termination_action required_argument \
   accelerator optional_argument \
   help no_argument "" "$@"
 do
@@ -138,8 +138,8 @@ do
     maintenance_policy_terminate)
       maintenance_policy_terminate=${OPTLARG-$maintenance_policy_terminate}
       ;;
-    instance_termination_action_delete)
-      instance_termination_action_delete=${OPTLARG-$instance_termination_action_delete}
+    instance_termination_action)
+      instance_termination_action=$OPTLARG
       ;;
     arm)
       arm=$OPTLARG
@@ -187,14 +187,13 @@ function start_vm {
   image_family_flag=$([[ -z "${image_family}" ]] || echo "--image-family=${image_family}")
   disk_size_flag=$([[ -z "${disk_size}" ]] || echo "--boot-disk-size=${disk_size}")
   boot_disk_type_flag=$([[ -z "${boot_disk_type}" ]] || echo "--boot-disk-type=${boot_disk_type}")
-  spot_flag=$([[ "${spot}" == "true" ]] && echo "--provisioning-model=SPOT" || echo "")
+  spot_flag=$([[ "${spot}" == "true" ]] && echo "--provisioning-model=SPOT --instance-termination-action=${instance_termination_action}" || echo "")
   ephemeral_flag=$([[ "${ephemeral}" == "true" ]] && echo "--ephemeral" || echo "")
   no_external_address_flag=$([[ "${no_external_address}" == "true" ]] && echo "--no-address" || echo "")
   network_flag=$([[ ! -z "${network}"  ]] && echo "--network=${network}" || echo "")
   subnet_flag=$([[ ! -z "${subnet}"  ]] && echo "--subnet=${subnet}" || echo "")
   accelerator=$([[ ! -z "${accelerator}"  ]] && echo "--accelerator=${accelerator} --maintenance-policy=TERMINATE" || echo "")
   maintenance_policy_flag=$([[ -z "${maintenance_policy_terminate}"  ]] || echo "--maintenance-policy=TERMINATE" )
-  instance_termination_action_flag=$([[ -z "${instance_termination_action_delete}"  ]] || echo "--instance-termination-action=DELETE" )
 
   echo "The new GCE VM will be ${VM_ID}"
 
@@ -341,7 +340,6 @@ function start_vm {
     ${subnet_flag} \
     ${accelerator} \
     ${maintenance_policy_flag} \
-    ${instance_termination_action_flag} \
     --labels=gh_ready=0,gh_repo_owner="${gh_repo_owner}",gh_repo="${gh_repo}",gh_run_id="${gh_run_id}" \
     --metadata-from-file=shutdown-script=/tmp/shutdown_script.sh \
     --metadata=startup-script="$startup_script" \
