@@ -1,7 +1,5 @@
 # gce-github-runner
-[![awesome-runners](https://img.shields.io/badge/listed%20on-awesome--runners-blue.svg)](https://github.com/jonico/awesome-runners)
-[![Pre-commit](https://github.com/related-sciences/gce-github-runner/actions/workflows/pre_commit.yml/badge.svg?branch=main)](https://github.com/related-sciences/gce-github-runner/actions/workflows/pre_commit.yml)
-[![Test](https://github.com/related-sciences/gce-github-runner/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/related-sciences/gce-github-runner/actions/workflows/test.yml)
+[![Pre-commit](https://github.com/nansen-ai/gce-github-runner/actions/workflows/pre_commit.yml/badge.svg?branch=main)](https://github.com/nansen-ai/gce-github-runner/actions/workflows/pre_commit.yml)
 
 Ephemeral GCE GitHub self-hosted runner.
 
@@ -15,7 +13,7 @@ jobs:
       label: ${{ steps.create-runner.outputs.label }}
     steps:
       - id: create-runner
-        uses: related-sciences/gce-github-runner@v0.10
+        uses: nansen-ai/gce-github-runner@v0.10
         with:
           token: ${{ secrets.GH_SA_TOKEN }}
           project_id: ${{ secrets.GCP_PROJECT_ID }}
