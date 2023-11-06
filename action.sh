@@ -33,13 +33,15 @@ network=
 scopes=
 shutdown_timeout=
 subnet=
-preemptible=
+spot=
 ephemeral=
 no_external_address=
 actions_preinstalled=
 maintenance_policy_terminate=
+instance_termination_action=
 arm=
 accelerator=
+max_run_duration=
 
 OPTLIND=1
 while getopts_long :h opt \
@@ -60,13 +62,15 @@ while getopts_long :h opt \
   scopes required_argument \
   shutdown_timeout required_argument \
   subnet optional_argument \
-  preemptible required_argument \
+  spot required_argument \
   ephemeral required_argument \
   no_external_address required_argument \
   actions_preinstalled required_argument \
   arm required_argument \
   maintenance_policy_terminate optional_argument \
+  instance_termination_action required_argument \
   accelerator optional_argument \
+  max_run_duration required_argument \
   help no_argument "" "$@"
 do
   case "$opt" in
@@ -121,8 +125,8 @@ do
     subnet)
       subnet=${OPTLARG-$subnet}
       ;;
-    preemptible)
-      preemptible=$OPTLARG
+    spot)
+      spot=$OPTLARG
       ;;
     ephemeral)
       ephemeral=$OPTLARG
@@ -136,12 +140,18 @@ do
     maintenance_policy_terminate)
       maintenance_policy_terminate=${OPTLARG-$maintenance_policy_terminate}
       ;;
+    instance_termination_action)
+      instance_termination_action=$OPTLARG
+      ;;
     arm)
       arm=$OPTLARG
       ;;
     accelerator)
       accelerator=$OPTLARG
-      ;;      
+      ;;
+    max_run_duration)
+      max_run_duration=$OPTLARG
+      ;;
     h|help)
       usage
       exit 0
@@ -182,22 +192,56 @@ function start_vm {
   image_family_flag=$([[ -z "${image_family}" ]] || echo "--image-family=${image_family}")
   disk_size_flag=$([[ -z "${disk_size}" ]] || echo "--boot-disk-size=${disk_size}")
   boot_disk_type_flag=$([[ -z "${boot_disk_type}" ]] || echo "--boot-disk-type=${boot_disk_type}")
-  preemptible_flag=$([[ "${preemptible}" == "true" ]] && echo "--preemptible" || echo "")
+  spot_flag=$([[ "${spot}" == "true" ]] && echo "--provisioning-model=SPOT --instance-termination-action=${instance_termination_action}" || echo "")
   ephemeral_flag=$([[ "${ephemeral}" == "true" ]] && echo "--ephemeral" || echo "")
   no_external_address_flag=$([[ "${no_external_address}" == "true" ]] && echo "--no-address" || echo "")
   network_flag=$([[ ! -z "${network}"  ]] && echo "--network=${network}" || echo "")
   subnet_flag=$([[ ! -z "${subnet}"  ]] && echo "--subnet=${subnet}" || echo "")
   accelerator=$([[ ! -z "${accelerator}"  ]] && echo "--accelerator=${accelerator} --maintenance-policy=TERMINATE" || echo "")
+  max_run_duration_flag=$([[ ! -z "${max_run_duration}"  ]] && echo "--max-run-duration=${max_run_duration} --instance-termination-action=${instance_termination_action}" || echo "")
   maintenance_policy_flag=$([[ -z "${maintenance_policy_terminate}"  ]] || echo "--maintenance-policy=TERMINATE" )
 
   echo "The new GCE VM will be ${VM_ID}"
 
+  cat <<-EOT > /tmp/shutdown_script.sh
+	#!/bin/bash
+	preempted=\$(curl -Ss http://metadata.google.internal/computeMetadata/v1/instance/preempted -H 'Metadata-Flavor: Google')
+	if [[ \$preempted = 'TRUE' ]]; then
+	pr_numbers=\$(curl -sSL \\
+	  -H "Accept: application/vnd.github+json" \\
+	  -H "Authorization: Bearer ${token}" \\
+	  https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID} | jq -r '.pull_requests[] | .number'
+	)
+	pr_numbers=(\${pr_numbers})
+	for pr_number in \${pr_numbers[@]}; do
+	  curl -sSL \\
+	    -X POST \\
+	    -H "Accept: application/vnd.github+json" \\
+	    -H "Authorization: Bearer ${token}" \\
+	    -d '{"body": "### Github runner instance in GCE was preempted\nPlease [re-run the jobs](https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID})."}' \\
+	    https://api.github.com/repos/${GITHUB_REPOSITORY}/issues/\${pr_number}/comments
+	done
+	[[ -x /opt/deeplearning/bin/shutdown_script.sh ]] && /opt/deeplearning/bin/shutdown_script.sh
+	CLOUDSDK_CONFIG=/tmp  gcloud --quiet compute instances delete ${VM_ID} --zone=${machine_zone} || true
+	fi
+	EOT
+  shutdown_script="$(cat /tmp/shutdown_script.sh)"
+
   startup_script="
+	# Install NVIDIA driver if exists
+	[[ -x /opt/deeplearning/install-driver.sh ]] && /opt/deeplearning/install-driver.sh
+
+	cat <<-'EOT' > /tmp/shutdown_script.sh
+	${shutdown_script}
+	EOT
+	chmod +x /tmp/shutdown_script.sh
+	gcloud --quiet compute instances add-metadata $VM_ID --zone=${machine_zone} --metadata-from-file=shutdown-script=/tmp/shutdown_script.sh
+
 	# Create a systemd service in charge of shutting down the machine once the workflow has finished
 	cat <<-EOF > /etc/systemd/system/shutdown.sh
 	#!/bin/sh
 	sleep ${shutdown_timeout}
-	gcloud compute instances delete $VM_ID --zone=$machine_zone --quiet
+	CLOUDSDK_CONFIG=/tmp gcloud compute instances delete $VM_ID --zone=$machine_zone --quiet
 	EOF
 
 	cat <<-EOF > /etc/systemd/system/shutdown.service
@@ -227,8 +271,6 @@ function start_vm {
 	./svc.sh install && \\
 	./svc.sh start && \\
 	gcloud compute instances add-labels ${VM_ID} --zone=${machine_zone} --labels=gh_ready=1
-	# 3 days represents the max workflow runtime. This will shutdown the instance if everything else fails.
-	nohup sh -c \"sleep 3d && gcloud --quiet compute instances delete ${VM_ID} --zone=${machine_zone}\" > /dev/null &
   "
 
   if $actions_preinstalled ; then
@@ -287,7 +329,7 @@ function start_vm {
   gh_repo="$(truncate_to_label "${GITHUB_REPOSITORY##*/}")"
   gh_run_id="${GITHUB_RUN_ID}"
 
-  gcloud compute instances create ${VM_ID} \
+  gcloud beta compute instances create ${VM_ID} \
     --zone=${machine_zone} \
     ${disk_size_flag} \
     ${boot_disk_type_flag} \
@@ -297,12 +339,14 @@ function start_vm {
     ${image_project_flag} \
     ${image_flag} \
     ${image_family_flag} \
-    ${preemptible_flag} \
+    ${spot_flag} \
     ${no_external_address_flag} \
     ${subnet_flag} \
     ${accelerator} \
+    ${max_run_duration_flag} \
     ${maintenance_policy_flag} \
     --labels=gh_ready=0,gh_repo_owner="${gh_repo_owner}",gh_repo="${gh_repo}",gh_run_id="${gh_run_id}" \
+    --metadata-from-file=shutdown-script=/tmp/shutdown_script.sh \
     --metadata=startup-script="$startup_script" \
     && echo "label=${VM_ID}" >> $GITHUB_OUTPUT
 

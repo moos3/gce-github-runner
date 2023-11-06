@@ -26,7 +26,7 @@ inputs:
     required: true
   machine_zone:
     description: GCE zone
-    default: "us-east1-c"
+    default: "us-central1-a"
     required: true
   machine_type:
     description: GCE machine type; https://cloud.google.com/compute/docs/machine-types
@@ -66,8 +66,8 @@ inputs:
   image_family:
     description: The image family for the operating system that the boot disk will be initialized with.
     required: false
-  preemptible:
-    description: Use GCE preemptible VM instance; https://cloud.google.com/compute/docs/instances/preemptible
+  spot:
+    description: Use GCE Spot VM instance; https://cloud.google.com/compute/docs/instances/spot
     default: false
     required: true
   ephemeral:
@@ -96,9 +96,22 @@ inputs:
     required: false
   maintenance_policy_terminate:
     description: "Set Google maintenance policy to TERMINATE.  This is required for GPUs as they do ot support live-migration."
+  instance_termination_action:
+    description: >
+      Specifies action that will be taken upon Spot VM preemption or automatic instance termination 
+      when the VM's current runtime reaches `max_run_duration`"
+    default: DELETE
+    required: true
   boot_disk_type:
     description: "Boot disk type for the GCE instance (https://cloud.google.com/sdk/gcloud/reference/compute/disk-types/list)"
     required: false
+  max_run_duration:
+    description: >
+      Limits how long this VM instance can run, specified as a duration relative to the VM instance's most-recent start time."
+      Format the duration, as the number of days, hours, minutes, and seconds followed by d, h, m, and s respectively.
+      For example, specify 30m for a duration of 30 minutes or specify 1d2h3m4s for a duration of 1 day, 2 hours, 3 minutes, and 4 seconds.
+    default: "3d"
+    requred: true
 outputs:
   label:
     description: >-
@@ -129,10 +142,12 @@ runs:
         --image=${{ inputs.image }}
         --image_family=${{ inputs.image_family }}
         --boot_disk_type=${{ inputs.boot_disk_type }}
-        --preemptible=${{ inputs.preemptible }}
+        --spot=${{ inputs.spot }}
         --ephemeral=${{ inputs.ephemeral }}
         --no_external_address=${{ inputs.no_external_address }}
         --actions_preinstalled=${{ inputs.actions_preinstalled }}
         --maintenance_policy_terminate=${{ inputs.maintenance_policy_terminate }}
+        --instance_termination_action=${{inputs.instance_termination_action}}
         --arm=${{ inputs.arm }}
+        --max_run_duration=${{inputs.max_run_duration}}
       shell: bash
