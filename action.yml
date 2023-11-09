@@ -112,6 +112,12 @@ inputs:
       For example, specify 30m for a duration of 30 minutes or specify 1d2h3m4s for a duration of 1 day, 2 hours, 3 minutes, and 4 seconds.
     default: "3d"
     requred: true
+  org_runner:
+    description: >
+      Register runner as org wide runner. Main benefit of using org wide runners is that it allows using fine-grained personal access token
+      with less privileges compared to repository runners.
+    default: true
+    required: true
 outputs:
   label:
     description: >-
@@ -150,4 +156,5 @@ runs:
         --instance_termination_action=${{inputs.instance_termination_action}}
         --arm=${{ inputs.arm }}
         --max_run_duration=${{inputs.max_run_duration}}
+        --org_runner=${{inputs.org_runner}}
       shell: bash

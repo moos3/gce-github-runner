@@ -42,6 +42,7 @@ instance_termination_action=
 arm=
 accelerator=
 max_run_duration=
+org_runner=
 
 OPTLIND=1
 while getopts_long :h opt \
@@ -71,6 +72,7 @@ while getopts_long :h opt \
   instance_termination_action required_argument \
   accelerator optional_argument \
   max_run_duration required_argument \
+  org_runner required_argument \
   help no_argument "" "$@"
 do
   case "$opt" in
@@ -152,6 +154,9 @@ do
     max_run_duration)
       max_run_duration=$OPTLARG
       ;;
+    org_runner)
+      org_runner=$OPTLARG
+      ;;
     h|help)
       usage
       exit 0
@@ -179,9 +184,13 @@ function start_vm {
     gcloud_auth
   fi
 
+  registration_token_url=$([[ "${org_runner}" == "true" ]] && \
+    echo "https://api.github.com/orgs/${GITHUB_REPOSITORY_OWNER}/actions/runners/registration-token" || \
+    echo "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/runners/registration-token")
+
   RUNNER_TOKEN=$(curl -S -s -XPOST \
       -H "authorization: Bearer ${token}" \
-      https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/runners/registration-token |\
+      ${registration_token_url} |\
       jq -r .token)
   echo "✅ Successfully got the GitHub Runner registration token"
 
@@ -200,6 +209,7 @@ function start_vm {
   accelerator=$([[ ! -z "${accelerator}"  ]] && echo "--accelerator=${accelerator} --maintenance-policy=TERMINATE" || echo "")
   max_run_duration_flag=$([[ ! -z "${max_run_duration}"  ]] && echo "--max-run-duration=${max_run_duration} --instance-termination-action=${instance_termination_action}" || echo "")
   maintenance_policy_flag=$([[ -z "${maintenance_policy_terminate}"  ]] || echo "--maintenance-policy=TERMINATE" )
+  runner_registration_url=$([[ "${org_runner}" == "true" ]] && echo "https://github.com/${GITHUB_REPOSITORY_OWNER}" || echo "https://github.com/${GITHUB_REPOSITORY}")
 
   echo "The new GCE VM will be ${VM_ID}"
 
@@ -267,7 +277,7 @@ function start_vm {
 	# See: https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/running-scripts-before-or-after-a-job
 	echo "ACTIONS_RUNNER_HOOK_JOB_COMPLETED=/usr/bin/gce_runner_shutdown.sh" >.env
 	gcloud compute instances add-labels ${VM_ID} --zone=${machine_zone} --labels=gh_ready=0 && \\
-	RUNNER_ALLOW_RUNASROOT=1 ./config.sh --url https://github.com/${GITHUB_REPOSITORY} --token ${RUNNER_TOKEN} --labels ${VM_ID} --unattended ${ephemeral_flag} --disableupdate && \\
+	RUNNER_ALLOW_RUNASROOT=1 ./config.sh --url ${runner_registration_url} --token ${RUNNER_TOKEN} --labels ${VM_ID} --unattended ${ephemeral_flag} --disableupdate && \\
 	./svc.sh install && \\
 	./svc.sh start && \\
 	gcloud compute instances add-labels ${VM_ID} --zone=${machine_zone} --labels=gh_ready=1
