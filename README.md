@@ -13,7 +13,7 @@ jobs:
       label: ${{ steps.create-runner.outputs.label }}
     steps:
       - id: create-runner
-        uses: nansen-ai/gce-github-runner@v0.11
+        uses: nansen-ai/gce-github-runner@v0.12
         with:
           token: ${{ secrets.GH_SA_TOKEN }}
           project_id: ${{ secrets.GCP_PROJECT_ID }}
