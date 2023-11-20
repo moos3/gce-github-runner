@@ -277,6 +277,7 @@ function start_vm {
 	# See: https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/running-scripts-before-or-after-a-job
 	echo "ACTIONS_RUNNER_HOOK_JOB_COMPLETED=/usr/bin/gce_runner_shutdown.sh" >.env
 	gcloud compute instances add-labels ${VM_ID} --zone=${machine_zone} --labels=gh_ready=0 && \\
+	sed -i '/ExecStart/a StandardOutput=journal+console' bin/actions.runner.service.template && \\
 	RUNNER_ALLOW_RUNASROOT=1 ./config.sh --url ${runner_registration_url} --token ${RUNNER_TOKEN} --labels ${VM_ID} --unattended ${ephemeral_flag} --disableupdate && \\
 	./svc.sh install && \\
 	./svc.sh start && \\
@@ -357,7 +358,7 @@ function start_vm {
     ${maintenance_policy_flag} \
     --labels=gh_ready=0,gh_repo_owner="${gh_repo_owner}",gh_repo="${gh_repo}",gh_run_id="${gh_run_id}" \
     --metadata-from-file=shutdown-script=/tmp/shutdown_script.sh \
-    --metadata=startup-script="$startup_script" \
+    --metadata=startup-script="$startup_script",serial-port-logging-enable=true \
     && echo "label=${VM_ID}" >> $GITHUB_OUTPUT
 
   safety_off
