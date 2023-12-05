@@ -43,6 +43,7 @@ arm=
 accelerator=
 max_run_duration=
 org_runner=
+vm_id_suffix=
 
 OPTLIND=1
 while getopts_long :h opt \
@@ -73,6 +74,7 @@ while getopts_long :h opt \
   accelerator optional_argument \
   max_run_duration required_argument \
   org_runner required_argument \
+  vm_id_suffix optional_argument \
   help no_argument "" "$@"
 do
   case "$opt" in
@@ -157,6 +159,9 @@ do
     org_runner)
       org_runner=$OPTLARG
       ;;
+    vm_id_suffix)
+      vm_id_suffix=${OPTLARG-$vm_id_suffix}
+      ;;
     h|help)
       usage
       exit 0
@@ -194,7 +199,7 @@ function start_vm {
       jq -r .token)
   echo "✅ Successfully got the GitHub Runner registration token"
 
-  VM_ID="gce-gh-runner-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+  VM_ID="gce-gh-runner-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}${vm_id_suffix}"
   service_account_flag=$([[ -z "${runner_service_account}" ]] || echo "--service-account=${runner_service_account}")
   image_project_flag=$([[ -z "${image_project}" ]] || echo "--image-project=${image_project}")
   image_flag=$([[ -z "${image}" ]] || echo "--image=${image}")
