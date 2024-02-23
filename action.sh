@@ -148,10 +148,6 @@ do
         arm="${arg#*=}"
         shift
         ;;
-        --max_run_duration=*)
-        max_run_duration="${arg#*=}"
-        shift
-        ;;
         --org_runner=*)
         org_runner="${arg#*=}"
         shift
@@ -175,7 +171,6 @@ done
   
 function gcloud_auth {
   # NOTE: when --project is specified, it updates the config
-  echo "service_account_key: ${service_account_key}"
   echo ${service_account_key} | gcloud --project  ${project_id} --quiet auth activate-service-account --key-file - &>/dev/null
   echo "✅ Successfully configured gcloud."
 }
@@ -212,7 +207,6 @@ function start_vm {
   network_flag=$([[ ! -z "${network}"  ]] && echo "--network=${network}" || echo "")
   subnet_flag=$([[ ! -z "${subnet}"  ]] && echo "--subnet=${subnet}" || echo "")
   accelerator=$([[ ! -z "${accelerator}"  ]] && echo "--accelerator=${accelerator} --maintenance-policy=TERMINATE" || echo "")
-  max_run_duration_flag=$([[ ! -z "${max_run_duration}"  ]] && echo "--max-run-duration=${max_run_duration} --instance-termination-action=${instance_termination_action}" || echo "")
   maintenance_policy_flag=$([[ -z "${maintenance_policy_terminate}"  ]] || echo "--maintenance-policy=TERMINATE" )
   runner_registration_url=$([[ "${org_runner}" == "true" ]] && echo "https://github.com/${GITHUB_REPOSITORY_OWNER}" || echo "https://github.com/${GITHUB_REPOSITORY}")
 
@@ -361,7 +355,6 @@ function start_vm {
     ${no_external_address_flag} \
     ${subnet_flag} \
     ${accelerator} \
-    ${max_run_duration_flag} \
     ${maintenance_policy_flag} \
     --labels=gh_ready=0,gh_repo_owner="${gh_repo_owner}",gh_repo="${gh_repo}",gh_run_id="${gh_run_id}" \
     --metadata-from-file=shutdown-script=/tmp/shutdown_script.sh \
@@ -382,7 +375,6 @@ function start_vm {
     ${no_external_address_flag} \
     ${subnet_flag} \
     ${accelerator} \
-    ${max_run_duration_flag} \
     ${maintenance_policy_flag} \
     --labels=gh_ready=0,gh_repo_owner="${gh_repo_owner}",gh_repo="${gh_repo}",gh_run_id="${gh_run_id}" \
     --metadata-from-file=shutdown-script=/tmp/shutdown_script.sh \

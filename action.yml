@@ -158,7 +158,6 @@ runs:
         --maintenance_policy_terminate=${{ inputs.maintenance_policy_terminate }}
         --instance_termination_action=${{inputs.instance_termination_action}}
         --arm=${{ inputs.arm }}
-        --max_run_duration=${{inputs.max_run_duration}}
         --org_runner=${{inputs.org_runner}}
         --vm_id_suffix=${{inputs.vm_id_suffix}}
       shell: bash
