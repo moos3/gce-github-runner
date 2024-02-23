@@ -168,7 +168,7 @@ do
         option="${arg%%=*}"
         value="${arg#*=}"
         echo "Error: Unsupported flag $option with value $value" >&2
-        exit 1
+        #Sexit 1
         ;;
     esac
 done
