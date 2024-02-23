@@ -352,8 +352,9 @@ function start_vm {
 
   echo "BuildImage Family: ${image_family_flag}"
   echo "BuildImage Family: ${image_family}"
-  exit 1
-    
+
+  image_family_flag="--image-family=ubuntu-2204-lts-arm64"
+  image_project_flag="--image-project=ubuntu-os-cloud"
   gcloud beta compute instances create ${VM_ID} \
     --zone=${machine_zone} \
     ${disk_size_flag} \
