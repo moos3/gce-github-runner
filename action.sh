@@ -174,7 +174,9 @@ do
       ;;
   esac
 done
-
+echo "Image Family: ${image_family_flag}"
+echo "Image Family: ${image_family}"
+  
 function gcloud_auth {
   # NOTE: when --project is specified, it updates the config
   echo ${service_account_key} | gcloud --project  ${project_id} --quiet auth activate-service-account --key-file - &>/dev/null
@@ -217,6 +219,9 @@ function start_vm {
   maintenance_policy_flag=$([[ -z "${maintenance_policy_terminate}"  ]] || echo "--maintenance-policy=TERMINATE" )
   runner_registration_url=$([[ "${org_runner}" == "true" ]] && echo "https://github.com/${GITHUB_REPOSITORY_OWNER}" || echo "https://github.com/${GITHUB_REPOSITORY}")
 
+  echo "after check Image Family: ${image_family_flag}"
+  echo "after check Image Family: ${image_family}"
+  
   echo "The new GCE VM will be ${VM_ID}"
 
   cat <<-EOT > /tmp/shutdown_script.sh
@@ -345,25 +350,9 @@ function start_vm {
   gh_repo="$(truncate_to_label "${GITHUB_REPOSITORY##*/}")"
   gh_run_id="${GITHUB_RUN_ID}"
 
-  echo gcloud beta compute instances create ${VM_ID} \
-    --zone=${machine_zone} \
-    ${disk_size_flag} \
-    ${boot_disk_type_flag} \
-    --machine-type=${machine_type} \
-    --scopes=${scopes} \
-    ${service_account_flag} \
-    ${image_project_flag} \
-    ${image_flag} \
-    ${image_family_flag} \
-    ${spot_flag} \
-    ${no_external_address_flag} \
-    ${subnet_flag} \
-    ${accelerator} \
-    ${max_run_duration_flag} \
-    ${maintenance_policy_flag} \
-    --labels=gh_ready=0,gh_repo_owner="${gh_repo_owner}",gh_repo="${gh_repo}",gh_run_id="${gh_run_id}" \
-    --metadata-from-file=shutdown-script=/tmp/shutdown_script.sh \
-    --metadata=startup-script="$startup_script"
+  echo "BuildImage Family: ${image_family_flag}"
+  echo "BuildImage Family: ${image_family}"
+  exit 1
     
   gcloud beta compute instances create ${VM_ID} \
     --zone=${machine_zone} \
