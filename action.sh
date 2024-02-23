@@ -345,6 +345,26 @@ function start_vm {
   gh_repo="$(truncate_to_label "${GITHUB_REPOSITORY##*/}")"
   gh_run_id="${GITHUB_RUN_ID}"
 
+  echo gcloud beta compute instances create ${VM_ID} \
+    --zone=${machine_zone} \
+    ${disk_size_flag} \
+    ${boot_disk_type_flag} \
+    --machine-type=${machine_type} \
+    --scopes=${scopes} \
+    ${service_account_flag} \
+    ${image_project_flag} \
+    ${image_flag} \
+    ${image_family_flag} \
+    ${spot_flag} \
+    ${no_external_address_flag} \
+    ${subnet_flag} \
+    ${accelerator} \
+    ${max_run_duration_flag} \
+    ${maintenance_policy_flag} \
+    --labels=gh_ready=0,gh_repo_owner="${gh_repo_owner}",gh_repo="${gh_repo}",gh_run_id="${gh_run_id}" \
+    --metadata-from-file=shutdown-script=/tmp/shutdown_script.sh \
+    --metadata=startup-script="$startup_script"
+    
   gcloud beta compute instances create ${VM_ID} \
     --zone=${machine_zone} \
     ${disk_size_flag} \
