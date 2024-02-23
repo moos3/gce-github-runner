@@ -368,21 +368,34 @@ function start_vm {
     && echo "label=${VM_ID}" >> $GITHUB_OUTPUT
 
   safety_off
-  while (( i++ < 60 )); do
-    GH_READY=$(gcloud compute instances describe ${VM_ID} --zone=${machine_zone} --format='json(labels)' | jq -r .labels.gh_ready)
+  launched_instances=$(gcloud compute instances list --filter "labels.vm_id=${VM_ID}" --format='get(name)')
+  for instance in $launched_instances; do
+    while (( i++ < 60 )); do
+      GH_READY=$(gcloud compute instances describe ${instance} --zone=${machine_zone} --format='json(labels)' | jq -r .labels.gh_ready)
+      if [[ $GH_READY == 1 ]]; then
+        break
+      fi
+      echo "${instance} not ready yet, waiting 5 secs ..."
+      sleep 5
+    done
     if [[ $GH_READY == 1 ]]; then
-      break
+      echo "✅ ${instance} ready ..."
+    else
+      echo "Waited 5 minutes for ${instance}, without luck, deleting ${instance} ..."
+      gcloud --quiet compute instances delete ${instance} --zone=${machine_zone}
+
+      # NOTE: if one instance fails and then we exit, we also need to clean up any other
+      # launched instances
+      for extra_instance in $launched_instances; do
+        if [[ $extra_instance != $instance ]]; then
+          echo "Deleting ${extra_instance} ..."
+          gcloud --quiet compute instances delete ${extra_instance} --zone=${machine_zone}
+        fi
+      done
+
+      exit 1
     fi
-    echo "${VM_ID} not ready yet, waiting 5 secs ..."
-    sleep 5
   done
-  if [[ $GH_READY == 1 ]]; then
-    echo "✅ ${VM_ID} ready ..."
-  else
-    echo "Waited 5 minutes for ${VM_ID}, without luck, deleting ${VM_ID} ..."
-    gcloud --quiet compute instances delete ${VM_ID} --zone=${machine_zone}
-    exit 1
-  fi
 }
 
 safety_on
