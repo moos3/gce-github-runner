@@ -345,7 +345,7 @@ function start_vm {
   gh_run_id="${GITHUB_RUN_ID}"
 
   gcloud compute instances bulk create \
-    --name-pattern="${VM_ID}" \
+    --name-pattern="${VM_ID}-#" \
     --count=8 \
     --min-count=4 \
     --zone=${machine_zone} \
