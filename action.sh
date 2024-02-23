@@ -165,7 +165,9 @@ do
         shift
         ;;
         *)
-        echo "Error: Unsupported flag $arg" >&2
+        option="${arg%%=*}"
+        value="${arg#*=}"
+        echo "Error: Unsupported flag $option with value $value" >&2
         exit 1
         ;;
     esac
@@ -173,7 +175,7 @@ done
   
 function gcloud_auth {
   # NOTE: when --project is specified, it updates the config
-  echo service_account_key: ${service_account_key}
+  echo "service_account_key: ${service_account_key}"
   echo ${service_account_key} | gcloud --project  ${project_id} --quiet auth activate-service-account --key-file - &>/dev/null
   echo "✅ Successfully configured gcloud."
 }
