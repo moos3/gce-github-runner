@@ -43,105 +43,132 @@ accelerator=
 max_run_duration=
 org_runner=
 vm_id_suffix=
+preemptible=
 
-
-while [[ $# -gt 0 ]]; do
-    case "$1" in
+for arg in "$@"
+do
+    case $arg in
         --command=*)
-            command="${1#*=}"
-            ;;
+        command="${arg#*=}"
+        shift
+        ;;
         --token=*)
-            token="${1#*=}"
-            ;;
+        token="${arg#*=}"
+        shift
+        ;;
         --project_id=*)
-            project_id="${1#*=}"
-            ;;
+        project_id="${arg#*=}"
+        shift
+        ;;
         --service_account_key=*)
-            service_account_key="${1#*=}"
-            ;;
+        service_account_key="${arg#*=}"
+        shift
+        ;;
         --runner_ver=*)
-            runner_ver="${1#*=}"
-            ;;
+        runner_ver="${arg#*=}"
+        shift
+        ;;
         --machine_zone=*)
-            machine_zone="${1#*=}"
-            ;;
+        machine_zone="${arg#*=}"
+        shift
+        ;;
         --machine_type=*)
-            machine_type="${1#*=}"
-            ;;
-        --boot_disk_type=*)
-            boot_disk_type="${1#*=}"
-            ;;
-        --disk_size=*)
-            disk_size="${1#*=}"
-            ;;
-        --runner_service_account=*)
-            runner_service_account="${1#*=}"
-            ;;
-        --image_project=*)
-            image_project="${1#*=}"
-            ;;
-        --image=*)
-            image="${1#*=}"
-            ;;
-        --image_family=*)
-            image_family="${1#*=}"
-            ;;
+        machine_type="${arg#*=}"
+        shift
+        ;;
         --network=*)
-            network="${1#*=}"
-            ;;
-        --scopes=*)
-            scopes="${1#*=}"
-            ;;
-        --shutdown_timeout=*)
-            shutdown_timeout="${1#*=}"
-            ;;
+        network="${arg#*=}"
+        shift
+        ;;
         --subnet=*)
-            subnet="${1#*=}"
-            ;;
-        --spot=*)
-            spot="${1#*=}"
-            ;;
-        --ephemeral=*)
-            ephemeral="${1#*=}"
-            ;;
-        --no_external_address=*)
-            no_external_address="${1#*=}"
-            ;;
-        --actions_preinstalled=*)
-            actions_preinstalled="${1#*=}"
-            ;;
-        --maintenance_policy_terminate=*)
-            maintenance_policy_terminate="${1#*=}"
-            ;;
-        --instance_termination_action=*)
-            instance_termination_action="${1#*=}"
-            ;;
-        --arm=*)
-            arm="${1#*=}"
-            ;;
+        subnet="${arg#*=}"
+        shift
+        ;;
         --accelerator=*)
-            accelerator="${1#*=}"
-            ;;
+        accelerator="${arg#*=}"
+        shift
+        ;;
+        --disk_size=*)
+        disk_size="${arg#*=}"
+        shift
+        ;;
+        --scopes=*)
+        scopes="${arg#*=}"
+        shift
+        ;;
+        --shutdown_timeout=*)
+        shutdown_timeout="${arg#*=}"
+        shift
+        ;;
+        --runner_service_account=*)
+        runner_service_account="${arg#*=}"
+        shift
+        ;;
+        --image_project=*)
+        image_project="${arg#*=}"
+        shift
+        ;;
+        --image=*)
+        image="${arg#*=}"
+        shift
+        ;;
+        --image_family=*)
+        image_family="${arg#*=}"
+        shift
+        ;;
+        --boot_disk_type=*)
+        boot_disk_type="${arg#*=}"
+        shift
+        ;;
+        --spot=*)
+        spot="${arg#*=}"
+        shift
+        ;;
+        --ephemeral=*)
+        ephemeral="${arg#*=}"
+        shift
+        ;;
+        --no_external_address=*)
+        no_external_address="${arg#*=}"
+        shift
+        ;;
+        --actions_preinstalled=*)
+        actions_preinstalled="${arg#*=}"
+        shift
+        ;;
+        --maintenance_policy_terminate=*)
+        maintenance_policy_terminate="${arg#*=}"
+        shift
+        ;;
+        --instance_termination_action=*)
+        instance_termination_action="${arg#*=}"
+        shift
+        ;;
+        --arm=*)
+        arm="${arg#*=}"
+        shift
+        ;;
         --max_run_duration=*)
-            max_run_duration="${1#*=}"
-            ;;
+        max_run_duration="${arg#*=}"
+        shift
+        ;;
         --org_runner=*)
-            org_runner="${1#*=}"
-            ;;
+        org_runner="${arg#*=}"
+        shift
+        ;;
         --vm_id_suffix=*)
-            vm_id_suffix="${1#*=}"
-            ;;
-        -h|--help)
-            usage
-            exit 0
-            ;;
+        vm_id_suffix="${arg#*=}"
+        shift
+        ;;
+        --preemptible=*)
+        preemptible="${arg#*=}"
+        shift
+        ;;
         *)
-            echo "Invalid option: $1"
-            usage
-            exit 1
-            ;;
+        echo "Error: Unsupported flag $arg" >&2
+        exit 1
+        ;;
     esac
-    shift
 done
   
 function gcloud_auth {
