@@ -283,6 +283,8 @@ function start_vm {
 	./svc.sh install && \\
 	./svc.sh start && \\
 	gcloud compute instances add-labels ${VM_ID} --zone=${machine_zone} --labels=gh_ready=1
+  apt-get install docker.io docker-compose git -y
+  gpasswd -a $(whoami) docker
   "
 
   if $actions_preinstalled ; then
