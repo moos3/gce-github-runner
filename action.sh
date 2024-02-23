@@ -15,8 +15,6 @@ function safety_off {
   set +o errexit +o pipefail +o noclobber +o nounset
 }
 
-source "${ACTION_DIR}/vendor/getopts_long.sh"
-
 command=
 token=
 project_id=
@@ -46,136 +44,105 @@ max_run_duration=
 org_runner=
 vm_id_suffix=
 
-OPTLIND=1
-while getopts_long :h opt \
-  command required_argument \
-  token required_argument \
-  project_id required_argument \
-  service_account_key required_argument \
-  runner_ver required_argument \
-  machine_zone required_argument \
-  machine_type required_argument \
-  boot_disk_type optional_argument \
-  disk_size optional_argument \
-  runner_service_account optional_argument \
-  image_project optional_argument \
-  image optional_argument \
-  image_family optional_argument \
-  network optional_argument \
-  scopes required_argument \
-  shutdown_timeout required_argument \
-  subnet optional_argument \
-  spot required_argument \
-  ephemeral required_argument \
-  no_external_address required_argument \
-  actions_preinstalled required_argument \
-  arm required_argument \
-  maintenance_policy_terminate optional_argument \
-  instance_termination_action required_argument \
-  accelerator optional_argument \
-  max_run_duration required_argument \
-  org_runner required_argument \
-  vm_id_suffix optional_argument \
-  help no_argument "" "$@"
-do
-  case "$opt" in
-    command)
-      command=$OPTLARG
-      ;;
-    token)
-      token=$OPTLARG
-      ;;
-    project_id)
-      project_id=$OPTLARG
-      ;;
-    service_account_key)
-      service_account_key="$OPTLARG"
-      ;;
-    runner_ver)
-      runner_ver=$OPTLARG
-      ;;
-    machine_zone)
-      machine_zone=$OPTLARG
-      ;;
-    machine_type)
-      machine_type=$OPTLARG
-      ;;
-    boot_disk_type)
-      boot_disk_type=${OPTLARG-$boot_disk_type}
-      ;;
-    disk_size)
-      disk_size=${OPTLARG-$disk_size}
-      ;;
-    runner_service_account)
-      runner_service_account=${OPTLARG-$runner_service_account}
-      ;;
-    image_project)
-      image_project=${OPTLARG-$image_project}
-      ;;
-    image)
-      image=${OPTLARG-$image}
-      ;;
-    image_family)
-      image_family=${OPTLARG-$image_family}
-      ;;
-    network)
-      network=${OPTLARG-$network}
-      ;;
-    scopes)
-      scopes=$OPTLARG
-      ;;
-    shutdown_timeout)
-      shutdown_timeout=$OPTLARG
-      ;;
-    subnet)
-      subnet=${OPTLARG-$subnet}
-      ;;
-    spot)
-      spot=$OPTLARG
-      ;;
-    ephemeral)
-      ephemeral=$OPTLARG
-      ;;
-    no_external_address)
-      no_external_address=$OPTLARG
-      ;;
-    actions_preinstalled)
-      actions_preinstalled=$OPTLARG
-      ;;
-    maintenance_policy_terminate)
-      maintenance_policy_terminate=${OPTLARG-$maintenance_policy_terminate}
-      ;;
-    instance_termination_action)
-      instance_termination_action=$OPTLARG
-      ;;
-    arm)
-      arm=$OPTLARG
-      ;;
-    accelerator)
-      accelerator=$OPTLARG
-      ;;
-    max_run_duration)
-      max_run_duration=$OPTLARG
-      ;;
-    org_runner)
-      org_runner=$OPTLARG
-      ;;
-    vm_id_suffix)
-      vm_id_suffix=${OPTLARG-$vm_id_suffix}
-      ;;
-    h|help)
-      usage
-      exit 0
-      ;;
-    :)
-      printf >&2 '%s: %s\n' "${0##*/}" "$OPTLERR"
-      usage
-      exit 1
-      ;;
-  esac
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --command=*)
+            command="${1#*=}"
+            ;;
+        --token=*)
+            token="${1#*=}"
+            ;;
+        --project_id=*)
+            project_id="${1#*=}"
+            ;;
+        --service_account_key=*)
+            service_account_key="${1#*=}"
+            ;;
+        --runner_ver=*)
+            runner_ver="${1#*=}"
+            ;;
+        --machine_zone=*)
+            machine_zone="${1#*=}"
+            ;;
+        --machine_type=*)
+            machine_type="${1#*=}"
+            ;;
+        --boot_disk_type=*)
+            boot_disk_type="${1#*=}"
+            ;;
+        --disk_size=*)
+            disk_size="${1#*=}"
+            ;;
+        --runner_service_account=*)
+            runner_service_account="${1#*=}"
+            ;;
+        --image_project=*)
+            image_project="${1#*=}"
+            ;;
+        --image=*)
+            image="${1#*=}"
+            ;;
+        --image_family=*)
+            image_family="${1#*=}"
+            ;;
+        --network=*)
+            network="${1#*=}"
+            ;;
+        --scopes=*)
+            scopes="${1#*=}"
+            ;;
+        --shutdown_timeout=*)
+            shutdown_timeout="${1#*=}"
+            ;;
+        --subnet=*)
+            subnet="${1#*=}"
+            ;;
+        --spot=*)
+            spot="${1#*=}"
+            ;;
+        --ephemeral=*)
+            ephemeral="${1#*=}"
+            ;;
+        --no_external_address=*)
+            no_external_address="${1#*=}"
+            ;;
+        --actions_preinstalled=*)
+            actions_preinstalled="${1#*=}"
+            ;;
+        --maintenance_policy_terminate=*)
+            maintenance_policy_terminate="${1#*=}"
+            ;;
+        --instance_termination_action=*)
+            instance_termination_action="${1#*=}"
+            ;;
+        --arm=*)
+            arm="${1#*=}"
+            ;;
+        --accelerator=*)
+            accelerator="${1#*=}"
+            ;;
+        --max_run_duration=*)
+            max_run_duration="${1#*=}"
+            ;;
+        --org_runner=*)
+            org_runner="${1#*=}"
+            ;;
+        --vm_id_suffix=*)
+            vm_id_suffix="${1#*=}"
+            ;;
+        -h|--help)
+            usage
+            exit 0
+            ;;
+        *)
+            echo "Invalid option: $1"
+            usage
+            exit 1
+            ;;
+    esac
+    shift
 done
-echo "Image Family: ${image_family_flag}"
-echo "Image Family: ${image_family}"
   
 function gcloud_auth {
   # NOTE: when --project is specified, it updates the config
@@ -350,12 +317,9 @@ function start_vm {
   gh_repo="$(truncate_to_label "${GITHUB_REPOSITORY##*/}")"
   gh_run_id="${GITHUB_RUN_ID}"
 
-  echo "BuildImage Family: ${image_family_flag}"
-  echo "BuildImage Family: ${image_family}"
-
   image_family_flag="--image-family=ubuntu-2204-lts-arm64"
   image_project_flag="--image-project=ubuntu-os-cloud"
-  gcloud beta compute instances create ${VM_ID} \
+  gcloud compute instances create ${VM_ID} \
     --zone=${machine_zone} \
     ${disk_size_flag} \
     ${boot_disk_type_flag} \
