@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-set -x 
 
 ACTION_DIR="$( cd $( dirname "${BASH_SOURCE[0]}" ) >/dev/null 2>&1 && pwd )"
 
@@ -62,6 +61,7 @@ do
         ;;
         --service_account_key=*)
         service_account_key="${arg#*=}"
+        service_account_key=$(echo "$service_account_key" | base64 --decode)
         shift
         ;;
         --runner_ver=*)
