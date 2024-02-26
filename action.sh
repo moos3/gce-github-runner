@@ -241,20 +241,12 @@ function start_vm {
   shutdown_script="$(cat /tmp/shutdown_script.sh)"
 
   startup_script="
-	# Install NVIDIA driver if exists
-	[[ -x /opt/deeplearning/install-driver.sh ]] && /opt/deeplearning/install-driver.sh
-
-	cat <<-'EOT' > /tmp/shutdown_script.sh
-	${shutdown_script}
-	EOT
-	chmod +x /tmp/shutdown_script.sh
-	gcloud --quiet compute instances add-metadata $VM_ID --zone=${machine_zone} --metadata-from-file=shutdown-script=/tmp/shutdown_script.sh
-
 	# Create a systemd service in charge of shutting down the machine once the workflow has finished
 	cat <<-EOF > /etc/systemd/system/shutdown.sh
 	#!/bin/sh
 	sleep ${shutdown_timeout}
-	CLOUDSDK_CONFIG=/tmp gcloud compute instances delete $VM_ID --zone=$machine_zone --quiet
+	instance=\$(hostname)
+	gcloud compute instances delete \\\${instance} --zone=$machine_zone --quiet
 	EOF
 
 	cat <<-EOF > /etc/systemd/system/shutdown.service
@@ -272,20 +264,25 @@ function start_vm {
 
 	cat <<-EOF > /usr/bin/gce_runner_shutdown.sh
 	#!/bin/sh
-	echo \"✅ Self deleting $VM_ID in ${machine_zone} in ${shutdown_timeout} seconds ...\"
+	instance=\$(hostname)
+	echo \"✅ Self deleting \\\${instance} in ${machine_zone} in ${shutdown_timeout} seconds ...\"
 	# We tear down the machine by starting the systemd service that was registered by the startup script
 	systemctl start shutdown.service
 	EOF
 
 	# See: https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/running-scripts-before-or-after-a-job
 	echo "ACTIONS_RUNNER_HOOK_JOB_COMPLETED=/usr/bin/gce_runner_shutdown.sh" >.env
-	gcloud compute instances add-labels ${VM_ID} --zone=${machine_zone} --labels=gh_ready=0 && \\
-	RUNNER_ALLOW_RUNASROOT=1 ./config.sh --url ${runner_registration_url} --token ${RUNNER_TOKEN} --labels ${VM_ID} --unattended ${ephemeral_flag} --disableupdate && \\
+	instance=\$(hostname)
+  apt-get install docker.io docker-compose git -y
+  gpasswd -a \$USER docker
+	gcloud compute instances add-labels \${instance} --zone=${machine_zone} --labels=gh_ready=0 && \\
+	RUNNER_ALLOW_RUNASROOT=1 ./config.sh --url https://github.com/${GITHUB_REPOSITORY} --token ${RUNNER_TOKEN} --labels ${VM_ID} --unattended ${ephemeral_flag} --disableupdate && \\
 	./svc.sh install && \\
 	./svc.sh start && \\
-	gcloud compute instances add-labels ${VM_ID} --zone=${machine_zone} --labels=gh_ready=1
-  apt-get install docker.io docker-compose git -y
-  gpasswd -a $(whoami) docker
+	gcloud compute instances add-labels \${instance} --zone=${machine_zone} --labels=gh_ready=1
+	# 3 days represents the max workflow runtime. This will shutdown the instance if everything else fails.
+	nohup sh -c \"sleep 3d && gcloud --quiet compute instances delete \${instance} --zone=${machine_zone}\" > /dev/null &
+
   "
 
   if $actions_preinstalled ; then
