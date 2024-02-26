@@ -276,7 +276,7 @@ function start_vm {
 	instance=\$(hostname)
   apt-get install docker.io docker-compose git -y
 	gcloud compute instances add-labels \${instance} --zone=${machine_zone} --labels=gh_ready=0 && \\
-	RUNNER_ALLOW_RUNASROOT=1 ./config.sh --url https://github.com/${GITHUB_REPOSITORY} --token ${RUNNER_TOKEN} --labels ${VM_ID} --unattended ${ephemeral_flag} --disableupdate && \\
+	RUNNER_ALLOW_RUNASROOT=1 ./config.sh --url --url ${runner_registration_url} --token ${RUNNER_TOKEN} --labels ${VM_ID} --unattended ${ephemeral_flag} --disableupdate && \\
 	./svc.sh install && \\
 	./svc.sh start && \\
 	gcloud compute instances add-labels \${instance} --zone=${machine_zone} --labels=gh_ready=1
