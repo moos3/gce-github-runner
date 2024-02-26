@@ -268,7 +268,7 @@ function start_vm {
 	instance=\$(hostname)
 	echo \"✅ Self deleting \\\${instance} in ${machine_zone} in ${shutdown_timeout} seconds ...\"
 	# We tear down the machine by starting the systemd service that was registered by the startup script
-	systemctl start shutdown.service
+	# systemctl start shutdown.service
 	EOF
 
 	# See: https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/running-scripts-before-or-after-a-job
@@ -276,7 +276,7 @@ function start_vm {
 	instance=\$(hostname)
   apt-get install docker.io docker-compose git -y
 	gcloud compute instances add-labels \${instance} --zone=${machine_zone} --labels=gh_ready=0 && \\
-	RUNNER_ALLOW_RUNASROOT=1 ./config.sh --url --url ${runner_registration_url} --token ${RUNNER_TOKEN} --labels ${VM_ID} --unattended ${ephemeral_flag} --disableupdate && \\
+	RUNNER_ALLOW_RUNASROOT=1 ./config.sh --url ${runner_registration_url} --token ${RUNNER_TOKEN} --labels ${VM_ID} --unattended ${ephemeral_flag} --disableupdate && \\
 	./svc.sh install && \\
 	./svc.sh start && \\
 	gcloud compute instances add-labels \${instance} --zone=${machine_zone} --labels=gh_ready=1
