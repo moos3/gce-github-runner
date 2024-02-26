@@ -244,6 +244,7 @@ function start_vm {
 	# Create a systemd service in charge of shutting down the machine once the workflow has finished
 	cat <<-EOF > /etc/systemd/system/shutdown.sh
 	#!/bin/sh
+  set +x
 	sleep ${shutdown_timeout}
 	instance=\$(hostname)
 	gcloud compute instances delete \\\${instance} --zone=$machine_zone --quiet
@@ -274,7 +275,6 @@ function start_vm {
 	echo "ACTIONS_RUNNER_HOOK_JOB_COMPLETED=/usr/bin/gce_runner_shutdown.sh" >.env
 	instance=\$(hostname)
   apt-get install docker.io docker-compose git -y
-  echo "RUNNER_ALLOW_RUNASROOT=1 ./config.sh --url https://github.com/${GITHUB_REPOSITORY} --token ${RUNNER_TOKEN} --labels ${VM_ID} --unattended ${ephemeral_flag} --disableupdate"
 	gcloud compute instances add-labels \${instance} --zone=${machine_zone} --labels=gh_ready=0 && \\
 	RUNNER_ALLOW_RUNASROOT=1 ./config.sh --url https://github.com/${GITHUB_REPOSITORY} --token ${RUNNER_TOKEN} --labels ${VM_ID} --unattended ${ephemeral_flag} --disableupdate && \\
 	./svc.sh install && \\
