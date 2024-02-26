@@ -235,7 +235,7 @@ function start_vm {
 	    https://api.github.com/repos/${GITHUB_REPOSITORY}/issues/\${pr_number}/comments
 	done
 	[[ -x /opt/deeplearning/bin/shutdown_script.sh ]] && /opt/deeplearning/bin/shutdown_script.sh
-	CLOUDSDK_CONFIG=/tmp  gcloud --quiet compute instances delete ${VM_ID} --zone=${machine_zone} || true
+	# CLOUDSDK_CONFIG=/tmp  gcloud --quiet compute instances delete ${VM_ID} --zone=${machine_zone} || true
 	fi
 	EOT
   shutdown_script="$(cat /tmp/shutdown_script.sh)"
@@ -276,7 +276,7 @@ function start_vm {
 	instance=\$(hostname)
   apt-get install docker.io docker-compose git -y
 	gcloud compute instances add-labels \${instance} --zone=${machine_zone} --labels=gh_ready=0 && \\
-	RUNNER_ALLOW_RUNASROOT=1 ./config.sh --url ${runner_registration_url} --token ${RUNNER_TOKEN} --labels ${VM_ID} --unattended ${ephemeral_flag} --disableupdate && \\
+	RUNNER_ALLOW_RUNASROOT=1 ./config.sh --url ${runner_registration_url} --token ${RUNNER_TOKEN} --labels ${VM_ID} --unattended ${ephemeral_flag} && \\
 	./svc.sh install && \\
 	./svc.sh start && \\
 	gcloud compute instances add-labels \${instance} --zone=${machine_zone} --labels=gh_ready=1
